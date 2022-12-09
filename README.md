@@ -4,9 +4,13 @@
 Цель работы: Реализовать кликер, который меняет тему, и в зависимости от темы будет добавляться разные значения.
 Устанавливаем Cubit с сайта pub.dev и создаем файлы с инициализацией темы и состояния.
  
-![image](https://user-images.githubusercontent.com/74062671/205856818-04cd635b-7b53-4d01-98ba-414f1b4556f7.png)
-![image](https://user-images.githubusercontent.com/74062671/205856839-74b83a8c-befd-48c9-a7f1-68d7d4c68ad4.png)
-![image](https://user-images.githubusercontent.com/74062671/205856863-0d8cab82-ae0d-4fd5-8039-6c66216c0d91.png)
-![image](https://user-images.githubusercontent.com/74062671/205856885-70f4e2a4-9e75-4ced-a1f1-cf24dd5939df.png)
-![image](https://user-images.githubusercontent.com/74062671/205856903-34c5d352-dc7f-433b-893e-09f470c446c1.png)
+![image](https://user-images.githubusercontent.com/74062671/206696569-543b03a0-6f6a-4e1e-83e8-aa8e057c942a.png)
+
+![image](https://user-images.githubusercontent.com/74062671/206696615-12a14c13-c2e6-40f3-809a-3d3480042aed.png)
+
+![image](https://user-images.githubusercontent.com/74062671/206696669-0aedca1e-fc82-43ab-9fdf-01b0566f8ea2.png)
+
+![image](https://user-images.githubusercontent.com/74062671/206696723-68d3e648-019d-44b1-b7ff-5cc8afc38a5f.png)
+
+
 Вывод: Реализовал кликер, который меняет тему, и в зависимости от темы будет добавляться разные значения.
