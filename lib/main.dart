@@ -1,6 +1,9 @@
-import 'package:cubit_pr/cubit/cubit/themecubit_cubit.dart';
+import 'dart:async';
+
+import 'package:cubit_pr/cubit/theme_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(MyApp());
 
@@ -11,91 +14,184 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   @override
-  Widget build(BuildContext context) {
-    ThemeMode themeMode = ThemeMode.system;
-    return BlocProvider(
-      create: (ctx) => AppTheme(),
-      child: Builder(builder: (context) {
-        return BlocBuilder<AppTheme, ThemecubitState>(
-          builder: (context, state) {
-            if (state is ThemeChange) {
-              themeMode = state.currentTheme;
-            }
+  void initState() {
+    super.initState();
+  }
 
-            return MaterialApp(
-              theme: ThemeData(
-                brightness: Brightness.light,
-              ),
-              darkTheme: ThemeData(
-                brightness: Brightness.dark,
-              ),
-              themeMode: themeMode,
-              title: 'Material App',
-              home: Scaffold(
-                appBar: AppBar(
-                  title: Text('Material App Bar'),
-                ),
-                body: body(),
-              ),
-            );
-          },
-        );
-      }),
+  ThemeMode currentMode = ThemeMode.system;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      themeMode: currentMode,
+      theme: ThemeData(
+        brightness: Brightness.light,
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+      ),
+      title: 'Material App',
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Material App Bar'),
+        ),
+        body: BlocProvider(
+          create: (context) => InitThemeCubit(),
+          child: BodyWidget(
+            changeMode: (currentMode) => setState(() {
+              this.currentMode = currentMode;
+            }),
+          ),
+        ),
+      ),
     );
   }
 }
 
-class body extends StatefulWidget {
-  body({
-    Key? key,
-  }) : super(key: key);
+class BodyWidget extends StatefulWidget {
+  BodyWidget({Key? key, required this.changeMode}) : super(key: key);
+  void Function(ThemeMode currentMode) changeMode;
 
   @override
-  State<body> createState() => _bodyState();
+  State<BodyWidget> createState() => _BodyWidgetState();
 }
 
-class _bodyState extends State<body> {
+class _BodyWidgetState extends State<BodyWidget> {
+  List<String> values = [];
+  late Timer _timer;
+  SharedPreferences? currentPrefs;
   int currentValue = 0;
 
-  List<String> currentValues = [];
+  @override
+  void initState() {
+    SharedPreferences.getInstance().then((value) {
+      currentPrefs = value;
+      if (currentPrefs!.containsKey("count")) {
+        setState(() {
+          currentPrefs = value;
+          values = value.getStringList("count")!;
+          currentValue = value.getInt("value")!;
+        });
+      }
+      if (currentPrefs!.containsKey('theme')) {
+        context
+            .read<InitThemeCubit>()
+            .changeTheme(ThemeMode.values[value.getInt('theme')!]);
+      }
+    });
+    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
+      context.read<InitThemeCubit>().calculateTheme(
+          Theme.of(context).brightness == Brightness.light
+              ? ThemeMode.light
+              : ThemeMode.dark,
+          false);
+    });
+    super.initState();
+  }
+
+  Timer getTimer() => Timer.periodic(Duration(seconds: 5), (timer) {
+        context.read<InitThemeCubit>().calculateTheme(
+            Theme.of(context).brightness == Brightness.light
+                ? ThemeMode.light
+                : ThemeMode.dark,
+            false);
+      });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return BlocListener<InitThemeCubit, ThemeCubitState>(
+      listener: (context, state) {
+        if (state is ThemeValueState) {
+          setState(() {
+            currentValue += state.curValue;
+            values.add(
+                "Theme: ${state.curTheme.name}, Count: $currentValue");
+          });
+
+          currentPrefs?.setStringList("count", values);
+          currentPrefs?.setInt("value", currentValue);
+        } else if (state is ThemeModeState) {
+          widget.changeMode(state.curTheme);
+          currentPrefs?.setInt("theme", state.curTheme.index);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
           children: [
-            ElevatedButton(
-                onPressed: () => context.read<AppTheme>().changeTheme(
-                    Theme.of(context).brightness == Brightness.light
-                        ? ThemeMode.dark
-                        : ThemeMode.light),
-                child: Text("Change theme")),
-            ElevatedButton(
-                onPressed: () => context.read<AppTheme>().countheme(
-                    Theme.of(context).brightness == Brightness.light
-                        ? ThemeMode.light
-                        : ThemeMode.dark),
-                child: Text("Add value")),
+            Expanded(
+              child: ListView(
+                children: values.map((e) => Center(child: Text(e))).toList(),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  children: [
+                    FloatingActionButton(
+                        onPressed: () {
+                          _timer.cancel();
+                          _timer = getTimer();
+                          context.read<InitThemeCubit>().calculateTheme(
+                              Theme.of(context).brightness == Brightness.light
+                                  ? ThemeMode.light
+                                  : ThemeMode.dark,
+                              false);
+                        },
+                        child: Icon(Icons.add)),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: FloatingActionButton(
+                        onPressed: () {
+                          _timer.cancel();
+                          _timer = getTimer();
+                          context.read<InitThemeCubit>().calculateTheme(
+                              Theme.of(context).brightness == Brightness.light
+                                  ? ThemeMode.light
+                                  : ThemeMode.dark,
+                              true);
+                        },
+                        child: Icon(Icons.remove),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(currentValue.toString()),
+                Column(
+                  children: [
+                    FloatingActionButton(
+                      onPressed: () => context.read<InitThemeCubit>().changeTheme(
+                          Theme.of(context).brightness == Brightness.light
+                              ? ThemeMode.dark
+                              : ThemeMode.light),
+                      child: Icon(Icons.theater_comedy),
+                    ),
+                    if (currentPrefs != null &&
+                        currentPrefs!.containsKey("count"))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: FloatingActionButton(
+                          onPressed: () {
+                            currentPrefs!.clear();
+                            setState(() {
+                              values.clear();
+                              currentValue = 0;
+                              _timer.cancel();
+                          _timer = getTimer();
+                            });
+                          },
+                          child: Icon(Icons.delete),
+                        ),
+                      ),
+                  ],
+                )
+              ],
+            )
           ],
         ),
-        BlocListener<AppTheme, ThemecubitState>(
-            listener: (context, state) {
-              if (state is ThemeCount) {
-                setState(() {
-                  currentValue += state.Addvalue;
-                  currentValues.add(
-                      "Current theme - ${state.currentTheme.name}, count - ${currentValue.toString()}");
-                });
-              }
-            },
-            child: Expanded(
-              child: ListView(
-                children: currentValues.map((e) => Text(e)).toList(),
-              ),
-            ))
-      ],
+      ),
     );
   }
 }
