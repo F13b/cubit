@@ -30,10 +30,10 @@ class _MyAppState extends State<MyApp> {
       darkTheme: ThemeData(
         brightness: Brightness.dark,
       ),
-      title: 'Material App',
+      title: 'Cubit App',
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Material App Bar'),
+          title: Text('Cubit PR App Bar'),
         ),
         body: BlocProvider(
           create: (context) => InitThemeCubit(),
@@ -166,7 +166,7 @@ class _BodyWidgetState extends State<BodyWidget> {
                           Theme.of(context).brightness == Brightness.light
                               ? ThemeMode.dark
                               : ThemeMode.light),
-                      child: Icon(Icons.theater_comedy),
+                      child: Icon(Icons.favorite_border_outlined),
                     ),
                     if (currentPrefs != null &&
                         currentPrefs!.containsKey("count"))
